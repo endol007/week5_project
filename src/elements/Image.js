@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import React from "react";
 
 const Image = (props) => {
-    const {shape, src, size} = props;
+    const {shape, src, size, _onClick} = props;
 
     const styles = {
         src: src,
@@ -25,7 +25,7 @@ const Image = (props) => {
 
     return (
         <React.Fragment>
-            <ImageDefault {...styles}></ImageDefault>
+            <ImageDefault {...styles} onClick={_onClick}></ImageDefault>
         </React.Fragment>
     )
 }
@@ -34,6 +34,7 @@ Image.defaultProps = {
   shape: "circle",
   src: "https://mean0images.s3.ap-northeast-2.amazonaws.com/4.jpeg",
   size: 36,
+  _onClick: ()=> {},
 };
 
 const ImageDefault = styled.div`

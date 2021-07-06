@@ -1,9 +1,11 @@
 import React from "react";
 import { Grid, Image, Text, Button } from "../elements";
+import Like from "./Like"
 
 import {history} from "../redux/configureStore";
 
  const Post = (props) => {
+
   return (
     <React.Fragment>
       <Grid>
@@ -29,11 +31,17 @@ import {history} from "../redux/configureStore";
         <Grid>
           <Image shape="rectangle" src={props.image_url} />
         </Grid>
-        <Grid padding="16px">
+        <Grid padding="16px" is_flex>
           <Text margin="0px" bold>
-            댓글 {props.comment_cnt}개
+            댓글 {props.comment_cnt}개 -
+            좋아요 1개
           </Text>
-          <Button bg="transparent" text="like"></Button>
+          <Like size="30"
+                src="https://image.flaticon.com/icons/png/512/833/833472.png"
+                _onClick={() => {
+
+                }}
+          ></Like>
         </Grid>
       </Grid>
     </React.Fragment>
