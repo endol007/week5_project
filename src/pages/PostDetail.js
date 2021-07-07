@@ -10,9 +10,7 @@ const PostDetail = (props) => {
     const dispatch = useDispatch();
     const id = props.match.params.id;
     const user_info = useSelector((state) => state.user.user);
-
     const post_list = useSelector(store => store.post.list);
-    console.log(post_list);
     const post_idx = post_list.findIndex(p => p.id ===id);
     const post = post_list[post_idx]
 

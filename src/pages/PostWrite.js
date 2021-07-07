@@ -21,6 +21,10 @@ const PostWrite = (props) => {
 
   const [contents, setContents] = React.useState(_post ? _post.contents : "");
 
+  const [layout_type, setLayoutType] = React.useState(
+    _post ? _post.layout_type : ""
+  );
+
   React.useEffect(() => {
     if (is_edit && !_post) {
       console.log("포스트 정보가 없어요!");
@@ -36,6 +40,9 @@ const PostWrite = (props) => {
 
   const changeContents = (e) => {
     setContents(e.target.value);
+  };
+  const changeLayoutType = (e) => {
+    setLayoutType(e.target.value);
   };
 
   const addPost = () => {
@@ -93,6 +100,16 @@ const PostWrite = (props) => {
           label="게시글 내용"
           placeholder="게시글 작성"
           multiLine
+        />
+      </Grid>
+
+      <Grid padding="16px">
+        <Input
+          type="text"
+          value={layout_type}
+          _onChange={changeLayoutType}
+          label="레이아웃 타입"
+          placeholder="a, b, c 중 하나를 골라주세요."
         />
       </Grid>
 

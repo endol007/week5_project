@@ -1,22 +1,26 @@
 import React from "react";
 import styled from "styled-components";
 import {useSelector} from "react-redux";
+import BlackHeart from "../shared/BlackHeart.png";
+import RedHeart from "../shared/BlackHeart.png";
 
 
 const Like = (props) => {
-    const {src, size, _onClick} = props;
+    
+    const {src, size, _onClick, like} = props;
     const styles ={
         size: size,
         src: src,
     }
-    return (
-            <LikeBtn {...styles} onClick={_onClick}></LikeBtn>
+        return (
+            <LikeBtn {...styles} onClick={_onClick} ></LikeBtn>
     )
 }
 Like.defaultProps={
     _onClick: () => {},
     size: 40,
-    src: "https://image.flaticon.com/icons/png/512/833/833472.png",
+    src: "",
+    like: "",
 }
 const LikeBtn = styled.div`
     width: ${(props) => props.size}px;

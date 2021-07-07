@@ -30,11 +30,11 @@ const Header = (props) => {
           </Grid>
 
           <Grid is_flex>
-            <Button margin="8px 5px" text="내정보"></Button>
             <NotiBadge _onClick={() => {
               history.push("/noti");
             }}></NotiBadge>
-            <Button margin="8px 3px"
+            <Button width="60px"
+              margin="8px 3px"
               text="로그아웃"
               _onClick={() => {
                 dispatch(userActions.logoutFB());

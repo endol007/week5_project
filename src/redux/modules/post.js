@@ -3,6 +3,7 @@ import { produce } from "immer";
 import { firestore, storage } from "../../shared/firebase";
 import "moment";
 import moment from "moment";
+import firebase from "firebase/app"
 
 import { actionCreators as imageActions } from "./image";
 
@@ -10,6 +11,7 @@ const SET_POST = "SET_POST";
 const ADD_POST = "ADD_POST";
 const EDIT_POST = "EDIT_POST";
 const LOADING = "LOADING";
+const DELETE = "DELETE";
 
 const setPost = createAction(SET_POST, (post_list, paging) => ({ post_list, paging }));
 const addPost = createAction(ADD_POST, (post) => ({ post }));
@@ -18,6 +20,7 @@ const editPost = createAction(EDIT_POST, (post_id, post) => ({
   post,
 }));
 const loading = createAction(LOADING, (is_loading)=>({is_loading}));
+const deletePost = createAction(DELETE, (post_id) => ({post_id}));
 
 const initialState = {
   list: [],
@@ -33,6 +36,8 @@ const initialPost = {
   // },
   image_url: "https://mean0images.s3.ap-northeast-2.amazonaws.com/4.jpeg",
   contents: "",
+  like_cnt: 1,
+  like_id: "",
   comment_cnt: 0,
   insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
 };
@@ -48,8 +53,6 @@ const editPostFB = (post_id = null, post = {}) => {
 
     const _post_idx = getState().post.list.findIndex((p) => p.id === post_id);
     const _post = getState().post.list[_post_idx];
-
-    console.log(_post);
 
     const postDB = firestore.collection("post");
 
@@ -95,7 +98,7 @@ const editPostFB = (post_id = null, post = {}) => {
   };
 };
 
-const addPostFB = (contents = "") => {
+const addPostFB = (contents = "", layout_type= "a") => {
   return function (dispatch, getState, { history }) {
     const postDB = firestore.collection("post");
     const _user = getState().user.user;
@@ -109,6 +112,7 @@ const addPostFB = (contents = "") => {
     const _post = {
       ...initialPost,
       contents: contents,
+      layout_type: layout_type,
       insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
     };
 
@@ -223,6 +227,22 @@ const getOnePostFB = (id) => {
         })
   }
 }
+const deletePostFB = (id) => {
+  return function(dispatch, getState, {history}){
+    if(!id){
+      window.alert("삭제할 수 없습니다");
+      return;
+    }
+    const postDB = firestore.collection("post");
+
+    postDB.doc(id).delete().then((res) => {
+      dispatch(deletePost(id));
+      history.replace("/");
+    }).catch(err => {
+      console.log(err);
+    })
+  }
+}
 
 export default handleActions(
   {
@@ -255,6 +275,12 @@ export default handleActions(
       }),
     [LOADING]: (state, action) => produce(state, (draft) => {
       draft.is_loading = action.payload.is_loading;
+    }),
+    [DELETE]: (state, action) => produce(state, (draft) => {
+      let idx = draft.list.findIndex((p) => p.id ===action.payload.post_id);
+      if(idx !== -1){
+        draft.list.splice(idx, 1);
+      }
     })
   },
   initialState
@@ -267,7 +293,8 @@ const actionCreators = {
   getPostFB,
   addPostFB,
   editPostFB,
-  getOnePostFB
+  getOnePostFB,
+  deletePostFB,
 };
 
 export { actionCreators };
