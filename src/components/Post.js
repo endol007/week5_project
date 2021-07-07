@@ -2,18 +2,34 @@ import React, { useEffect } from "react";
 import { Grid, Image, Text, Button } from "../elements";
 import Like from "./Like"
 import {history} from "../redux/configureStore";
-import {useDispatch} from "react-redux";
-import {actionCreators as postActions} from "../redux/modules/post";
+import {useDispatch, useSelector} from "react-redux";
+import post, {actionCreators as postActions} from "../redux/modules/post";
 import {actionCreators as likeActions} from "../redux/modules/like";
 import BlackHeart from "../shared/BlackHeart.png";
 import RedHeart from "../shared/RedHeart.png";
 
  const Post = React.memo((props) => {
   const dispatch = useDispatch();
-  const id = props.id;
-  const like_id = props.like_id;
+  const _id = useSelector((state) => state.post.list);
+  const id_like = useSelector((state) => state.like);
+  const like_id = _id[0].like_id;
+  
+  const post_id = props.id;
   const count = props.like_cnt;
+  const user_liked = _id[0].user_info.user_id;
+  const _user_liked = id_like.list.user_id;
+  const _post_id = id_like.list.post_id
+  
   const [likeChecked, setLikeChecked] = React.useState("like");
+  
+  React.useEffect(() => {
+    if(_user_liked === user_liked && post_id === _post_id){
+      setLikeChecked("dislike");
+    }else{
+      setLikeChecked("like");
+    }
+}, []);
+  
 
   return (
     <React.Fragment>
@@ -89,14 +105,14 @@ import RedHeart from "../shared/RedHeart.png";
           {likeChecked==="like"? (<Like size="30"
                 src={BlackHeart}
                 _onClick={() => {
-                  dispatch(likeActions.addLikeFB(id, count));
+                  dispatch(likeActions.addLikeFB(post_id, count));
                   setLikeChecked("dislike")
                 }}
           ></Like>) : (
             <Like size="30"
                 src={RedHeart}
                 _onClick={() => {
-                  dispatch(likeActions.deleteLikeFB(like_id, id));
+                  dispatch(likeActions.deleteLikeFB(like_id, post_id));
                   setLikeChecked("like");
                 }}
           ></Like>

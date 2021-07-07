@@ -1,6 +1,5 @@
 import React from "react";
 import { Grid, Text, Button } from "../elements";
-import { getCookie, deleteCookie } from "../shared/Cookie";
 
 import { useSelector, useDispatch } from "react-redux";
 import { actionCreators as userActions } from "../redux/modules/user";

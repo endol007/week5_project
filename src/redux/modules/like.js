@@ -1,23 +1,20 @@
 import { createAction, handleActions } from "redux-actions";
 import { produce } from "immer";
 import { firestore} from "../../shared/firebase";
-import moment from "moment";
-import firebase from "firebase/app";
 import {actionCreators as postActions} from "./post"
-import { create } from "lodash";
 
 const ADD_LIKE = "ADD_LIKE";
 const SET_LIKE = "SET_LIKE";
 const DELETE_LIKE = "DELETE_LIKE";
 
 const addLike = createAction(ADD_LIKE, (post_id, count_like) => ({post_id, count_like}));
-const deleteLike = createAction(DELETE_LIKE, (id) => ({id}));
+const deleteLike = createAction(DELETE_LIKE, (post_id, post) => ({post_id, post}));
 
 const initialState = {
     list: {},
 };
 
-const addLikeFB = (post_id, count_like) => {
+const addLikeFB = (post_id) => {
     return function(dispatch, getState, {history}){
         const likeDB = firestore.collection("like");
         const user_info = getState().user.user;
@@ -29,10 +26,9 @@ const addLikeFB = (post_id, count_like) => {
         likeDB.add(like).then(doc => {
             const postDB = firestore.collection("post");
             const post = getState().post.list.find(l=> l.id === post_id)
-                
-            const increment = firebase.firestore.FieldValue.increment(1);
+            const like_cnt = post.like_cnt;
             like = {...like, id: doc.id}
-            postDB.doc(post_id).update({like_cnt: increment, like_id: doc.id}).then((_post) => {
+            postDB.doc(post_id).update({like_cnt: parseInt(like_cnt)+1, like_id: doc.id}).then((_post) => {
                 dispatch(addLike(post_id, like));
                 dispatch(postActions.editPost(post_id, {like_cnt: parseInt(post.like_cnt)+1}));
             })
@@ -46,13 +42,19 @@ const deleteLikeFB = (like_id, post_id) => {
         if(!like_id){
             return;
         }
-        console.log(like_id)
+        const postDB = firestore.collection("post");
         const likeDB = firestore.collection("like");
-        const post = getState().post.list.find(l=> l.id === post_id)
+        const post = getState().post.list.find(l=> l.id === post_id);
+        const like_cnt = post.like_cnt;
+        postDB.doc(post_id).update({like_cnt: parseInt(like_cnt)-1}).then((_post) => {
+        
+        });
         likeDB.doc(like_id).delete().then((res) => {
-            dispatch(deleteLike(post_id));
-            dispatch(postActions.editPost(post_id, {like_cnt: parseInt(post.like_cnt)-1}))
-        })
+            postDB.doc(post_id).update({like_cnt: parseInt(like_cnt)-1}).then((_post) => {
+                dispatch(deleteLike(post_id, post));
+            dispatch(postActions.editPost(post_id, {like_cnt: parseInt(post.like_cnt)-1}));
+            });
+    });
     }
 
 }
@@ -60,10 +62,11 @@ const deleteLikeFB = (like_id, post_id) => {
 export default handleActions(
     {
         [ADD_LIKE]: (state, action) => produce(state, (draft) => {
-            draft.list[action.payload.post_id]= action.payload.count_like
+            draft.list = action.payload.count_like;
         }),
         [DELETE_LIKE]: (state, action) => produce(state, (draft) => {
-            
+            draft.list = action.payload.post.like_cnt
+            draft.list -= 1;
         })
     },
     initialState
