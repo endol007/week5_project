@@ -15,8 +15,6 @@ const Header = (props) => {
   const _session_key = `firebase:authUser:${apiKey}:[DEFAULT]`;
 
   const is_session = sessionStorage.getItem(_session_key)? true : false;
-  
-  console.log(is_session);
 
   if (is_login && is_session) {
     return (
@@ -24,11 +22,11 @@ const Header = (props) => {
         <Grid is_flex padding="4px 16px">
           <Grid>
             <Button _onClick={()=>{history.push("/")}} bg="transparent">
-              <Text bold size="20px" margin="8px 50px 0px 0px ">HanghaeBook</Text>
+              <Text bold size="20px" margin="8px 100px 0px 0px">HanghaeBook</Text>
             </Button>
           </Grid>
 
-          <Grid is_flex>
+          <Grid is_right>
             <NotiBadge _onClick={() => {
               history.push("/noti");
             }}></NotiBadge>
@@ -49,9 +47,9 @@ const Header = (props) => {
     <React.Fragment>
       <Grid is_flex padding="4px 16px">
         <Grid>
-          <Text margin="0px" size="24px" bold>
-            헬로
-          </Text>
+          <Button _onClick={()=>{history.push("/")}} bg="transparent">
+              <Text bold size="20px" margin="8px 50px 0px 0px ">HanghaeBook</Text>
+          </Button>
         </Grid>
 
         <Grid is_flex>

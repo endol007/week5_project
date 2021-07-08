@@ -6,12 +6,14 @@ import moment from "moment";
 import firebase from "firebase/app"
 
 import { actionCreators as imageActions } from "./image";
+import { batch } from "react-redux";
 
 const SET_POST = "SET_POST";
 const ADD_POST = "ADD_POST";
 const EDIT_POST = "EDIT_POST";
 const LOADING = "LOADING";
 const DELETE = "DELETE";
+const LIKE_TOGGLE = "LIKE_TOGGLE";
 
 const setPost = createAction(SET_POST, (post_list, paging) => ({ post_list, paging }));
 const addPost = createAction(ADD_POST, (post) => ({ post }));
@@ -21,6 +23,7 @@ const editPost = createAction(EDIT_POST, (post_id, post) => ({
 }));
 const loading = createAction(LOADING, (is_loading)=>({is_loading}));
 const deletePost = createAction(DELETE, (post_id) => ({post_id}));
+const likeToggle = createAction(LIKE_TOGGLE, (post_id, is_like = null)=> ({post_id, is_like,}));
 
 const initialState = {
   list: [],
@@ -36,8 +39,9 @@ const initialPost = {
   // },
   image_url: "https://mean0images.s3.ap-northeast-2.amazonaws.com/4.jpeg",
   contents: "",
-  like_cnt: 1,
-  like_id: "",
+  like_cnt: 0,
+  is_like: false,
+  layout_type: "a",
   comment_cnt: 0,
   insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
 };
@@ -199,12 +203,106 @@ const getPostFB = (start= null, size= 3) => {
 
         post_list.push(post);
       });
+      if(paging.next){
       post_list.pop();
+      }
+      if(getState().user.user){
+        dispatch(setIsLike(post_list, paging));
+      }else{
+      dispatch(setPost(post_list, paging));
+      }
+    });
+  };
+};
+const toggleLikeFB = (post_id) => {
+  return function (dispatch, getState, {history}) {
+    if (!getState().user.is_login){
+      return;
+    }
+    const postDB = firestore.collection("post");
+    const likeDB = firestore.collection("like");
+
+    const _idx = getState().post.list.findIndex((p) => p.id === post_id);
+
+    const _post = getState().post.list[_idx];
+
+    const user_id = getState().user.user.uid;
+
+    if (_post.is_like) {
+      likeDB.where("post_id", "==", _post.id).where("user_id", "==", user_id).get()
+      .then((docs) => {
+
+        let batch = firestore.batch();
+
+        docs.forEach((doc) => { 
+          batch.delete(likeDB.doc(doc.id));
+        });
+      
+      batch.update(postDB.doc(post_id), {
+        like_cnt:
+          _post.like_cnt -1 < 1 ? _post.like_cnt : _post.like_cnt -1,
+      });
+
+      batch.commit().then(() => {
+
+        dispatch(likeToggle(post_id, !_post.is_like));
+      });
+    }).catch((err) => {
+      console.log(err);
+    });
+    }else{
+      likeDB.add({post_id: post_id, user_id: user_id}).then(doc => {
+        postDB.doc(post_id).update({like_cnt: _post.like_cnt + 1}).then(doc => {
+          dispatch(likeToggle(post_id, !_post.is_like));
+        });
+      });
+    }
+  };
+};
+const setIsLike = (_post_list, paging) => {
+  return function (dispatch, getState, { history }) {
+    // 로그인하지 않았을 땐 리턴!
+    if (!getState().user.is_login) {
+      return;
+    }
+
+    const likeDB = firestore.collection("like");
+
+    // post_list의 id 배열을 만들어요
+    const post_ids = _post_list.map((p) => p.id);
+    let like_query = likeDB.where("post_id", "in", post_ids);
+
+    like_query.get().then((like_docs) => {
+      let like_list = {};
+
+      like_docs.forEach((doc) => {
+
+        if (like_list[doc.data().post_id]) {
+          like_list[doc.data().post_id] = [
+            ...like_list[doc.data().post_id],
+            doc.data().user_id,
+          ];
+        } else {
+          like_list[doc.data().post_id] = [doc.data().user_id];
+        }
+      });
+
+      const user_id = getState().user.user.uid;
+      let post_list = _post_list.map((p) => {
+        // 만약 p 게시글을 좋아요한 목록에 로그인한 사용자 id가 있다면?
+        if (like_list[p.id] && like_list[p.id].indexOf(user_id) !== -1) {
+          // is_like만 true로 바꿔서 return 해줘요!
+          return { ...p, is_like: true };
+        }
+        return p;
+      });
+      console.log(post_list);
 
       dispatch(setPost(post_list, paging));
     });
   };
 };
+
 
 const getOnePostFB = (id) => {
   return function(dispatch, getState, {history}){
@@ -224,9 +322,10 @@ const getOnePostFB = (id) => {
                 { id: doc.id, user_info: {} }
               );
               dispatch(setPost([post]));
-        })
-  }
-}
+              dispatch(setIsLike([post]));
+        });
+  };
+};
 const deletePostFB = (id) => {
   return function(dispatch, getState, {history}){
     if(!id){
@@ -256,7 +355,7 @@ export default handleActions(
             acc[acc.findIndex(a => a.id === cur.id)] = cur;
             return acc;
           }
-        }, [])
+        }, []);
         if(action.payload.paging){
           draft.paging = action.payload.paging;
         }
@@ -281,7 +380,11 @@ export default handleActions(
       if(idx !== -1){
         draft.list.splice(idx, 1);
       }
-    })
+    }),
+    [LIKE_TOGGLE]: (state, action) => produce(state, (draft) => {
+      let idx = draft.list.findIndex((p) => p.id === action.payload.post_id);
+      draft.list[idx].is_like = action.payload.is_like;
+    }),
   },
   initialState
 );
@@ -295,6 +398,7 @@ const actionCreators = {
   editPostFB,
   getOnePostFB,
   deletePostFB,
+  toggleLikeFB,
 };
 
 export { actionCreators };

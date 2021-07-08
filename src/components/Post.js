@@ -4,33 +4,9 @@ import Like from "./Like"
 import {history} from "../redux/configureStore";
 import {useDispatch, useSelector} from "react-redux";
 import post, {actionCreators as postActions} from "../redux/modules/post";
-import {actionCreators as likeActions} from "../redux/modules/like";
-import BlackHeart from "../shared/BlackHeart.png";
-import RedHeart from "../shared/RedHeart.png";
 
  const Post = React.memo((props) => {
   const dispatch = useDispatch();
-  const _id = useSelector((state) => state.post.list);
-  const id_like = useSelector((state) => state.like);
-  const like_id = _id[0].like_id;
-  
-  const post_id = props.id;
-  const count = props.like_cnt;
-  const user_liked = _id[0].user_info.user_id;
-  const _user_liked = id_like.list.user_id;
-  const _post_id = id_like.list.post_id
-  
-  const [likeChecked, setLikeChecked] = React.useState("like");
-  
-  React.useEffect(() => {
-    if(_user_liked === user_liked && post_id === _post_id){
-      setLikeChecked("dislike");
-    }else{
-      setLikeChecked("like");
-    }
-}, []);
-  
-
   return (
     <React.Fragment>
       <Grid>
@@ -43,13 +19,17 @@ import RedHeart from "../shared/RedHeart.png";
             <Text>{props.insert_dt}</Text>
             {props.is_me && (
               <React.Fragment>
-              <Button width="auto" margin="4px" padding="4px" _onClick={() => {
+              <Button width="auto" margin="4px" padding="4px" _onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 history.push(`/write/${props.id}`);
               }}>
                 수정
               </Button>
-              <Button width="auto" margin="4px" padding="4px" _onClick={() => {
+              <Button width="auto" margin="4px" padding="4px" _onClick={(e) => {
                 dispatch(postActions.deletePostFB(props.id));
+                e.preventDefault();
+                e.stopPropagation();
               }}>삭제</Button>
               </React.Fragment>
             )}
@@ -102,21 +82,13 @@ import RedHeart from "../shared/RedHeart.png";
             댓글 {props.comment_cnt}개 -
             좋아요 {props.like_cnt}개
           </Text>
-          {likeChecked==="like"? (<Like size="30"
-                src={BlackHeart}
-                _onClick={() => {
-                  dispatch(likeActions.addLikeFB(post_id, count));
-                  setLikeChecked("dislike")
+          <Like _onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dispatch(postActions.toggleLikeFB(props.id));
                 }}
-          ></Like>) : (
-            <Like size="30"
-                src={RedHeart}
-                _onClick={() => {
-                  dispatch(likeActions.deleteLikeFB(like_id, post_id));
-                  setLikeChecked("like");
-                }}
+                is_like={props.is_like}
           ></Like>
-          ) }
         </Grid>
       </Grid>
     </React.Fragment>
@@ -135,7 +107,7 @@ Post.defaultProps = {
   comment_cnt: 10,
   layout_type: "a",
   like_cnt: 1,
-  like_id: "",
+  is_like: false,
   insert_dt: "2021-02-27 10:00:00",
   is_me: false,
 };
